@@ -341,6 +341,14 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
 .call .ct small{display:block;color:var(--graphite);font-size:.78rem;margin-top:1px;}
 .call .num{flex-shrink:0;font-weight:700;font-size:.82rem;letter-spacing:.01em;white-space:nowrap;}
 @media (max-width:359px){.call{flex-wrap:wrap;}.call .num{width:100%;padding-left:48px;}}
+.shot{margin:2px auto 16px;width:min(62vw,236px);position:relative;border-radius:18px;background:#101010;box-shadow:0 22px 34px -16px rgba(23,24,26,.6),0 0 0 1px rgba(23,24,26,.25);}
+.shot img{display:block;width:100%;height:auto;border-radius:18px;}
+.shot .hl{position:absolute;left:2.4%;width:95.2%;top:55.6%;height:14.2%;border-radius:10px;border:2.5px solid #fff;animation:hlp 1.8s ease-out infinite;}
+@keyframes hlp{0%{box-shadow:0 0 0 0 rgba(255,255,255,.65);}100%{box-shadow:0 0 0 14px rgba(255,255,255,0);}}
+.shot .fg{position:absolute;right:12%;top:63%;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 6px rgba(255,255,255,.3);animation:tapf 1.8s ease-in-out infinite;}
+@keyframes tapf{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(.7);opacity:1;}}
+.shot figcaption{position:absolute;left:0;right:0;bottom:-11px;margin:auto;width:max-content;background:var(--ink);color:var(--paper);font:700 .68rem var(--sans);letter-spacing:.04em;padding:5px 12px;border-radius:99px;}
+@media (max-height:720px){.shot{width:min(52vw,190px);}}
 </style>
 </head>
 <body>
@@ -499,7 +507,7 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
         <div class="kicker">Étape 3 sur 4</div>
         <h2>Préparez l'écriture</h2>
         <ol class="steps">
-          <li><span>Ouvrez <b>NFC Tools</b>, puis l'onglet <em>Écrire</em>.</span></li>
+          <li><span>Ouvrez <b>NFC Tools</b>, puis l'onglet <em>Ecrire</em>.</span></li>
           <li><span>Touchez <em>Ajouter un enregistrement</em>, puis <em>URL / URI</em>.</span></li>
           <li><span>Collez votre lien, validez avec <em>OK</em>.</span></li>
         </ol>
@@ -515,9 +523,9 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
       <div class="ios-step" id="i4">
         <div class="kicker">Étape 4 sur 4</div>
         <h2>Écrivez sur la carte</h2>
-        <div class="duo top" aria-hidden="true"><div class="ph"></div><div class="cd"></div></div>
+        <figure class="shot"><img src="nfctools-ecrire.jpg" alt="Écran Ecrire de l'application NFC Tools"><span class="hl"></span><span class="fg"></span><figcaption>Vous devez voir cet écran</figcaption></figure>
         <ol class="steps">
-          <li><span>Touchez <em>Écrire</em> dans l'application.</span></li>
+          <li><span>Touchez <em>Ecrire / <span id="bytes">38</span> Bytes</em> dans l'application.</span></li>
           <li><span>Posez la carte contre le <b>haut de l'iPhone</b>.</span></li>
           <li><span>Attendez le message de réussite avant de la retirer.</span></li>
         </ol>
@@ -624,12 +632,24 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
   }
 
 
+
+  /* ---- taille du message écrit sur la puce, comme l'affiche NFC Tools ---- */
+  function ndefBytes(u){
+    var h = u.href, code = 0, rest = h;
+    if(h.indexOf('https://www.') === 0){ code = 2; rest = h.slice(12); }
+    else if(h.indexOf('https://') === 0){ code = 4; rest = h.slice(8); }
+    var n = unescape(encodeURIComponent(rest)).length + 1;
+    return n < 256 ? n + 4 : n + 6;
+  }
+  function showBytes(){ var b = $('bytes'); if(b) b.textContent = ndefBytes(link); }
+
   /* ---- changer mon lien ---- */
   function setLink(u){
     link = u;
     var els = document.querySelectorAll('.lk');
     for(var i=0;i<els.length;i++) els[i].textContent = shortLink(link);
     $('open-card').href = link.href;
+    showBytes();
   }
   function goAndroid(){ show(hasNFC ? 's-and' : 's-unsup'); }
   function goIOS(){ iosGo(0); show('s-ios'); }
@@ -644,7 +664,7 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
     $('urlerr').textContent = (v && !newU) ? 'Entrez une adresse complète, par exemple monsite.fr/carte' : (newU ? 'Parfait, ce lien sera enregistré : ' + shortLink(newU) : '');
   }
   $('newurl').addEventListener('input', checkNew);
-  var initLink = link;
+  var initLink = link; showBytes();
   $('act').addEventListener('click', function(){ buzz(20); setLink(initLink); show('s-device'); });
   $('chg').addEventListener('click', function(){ buzz(20); show('s-change'); });
   $('chg2').addEventListener('click', function(){ buzz(20); history_ = ['s-home']; show('s-change'); });
