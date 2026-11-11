@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F3EF">
+<title>Activer ma carte NFC | RG.card</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="description" content="Activez votre carte NFC RG.card en quelques secondes.">
+<style>
+@font-face{font-family:'Fraunces';src:url('fraunces.woff2') format('woff2');font-weight:400 900;font-style:normal;font-display:swap;}
+@font-face{font-family:'Fraunces';src:url('fraunces-italic.woff2') format('woff2');font-weight:400 900;font-style:italic;font-display:swap;}
+@font-face{font-family:'Work Sans';src:url('work-sans.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;}
+:root{
+  --paper:#F4F3EF; --paper-dim:#ECEAE4; --ink:#17181A; --charcoal:#26282A; --graphite:#5A5D60; --mist:#9A9D9F;
+  --hair:rgba(23,24,26,.13); --hair-strong:rgba(23,24,26,.26); --white:#fff;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif; --sans:'Work Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+  min-height:100vh;min-height:100dvh;overflow-x:hidden;}
+
+/* ---------- fond : montagne + halos doux ---------- */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.bg .mt{position:absolute;left:0;right:0;top:0;height:150px;background:url('montagne.jpg') 50% 62%/cover no-repeat;filter:grayscale(1) contrast(1.04);}
+.bg .mt::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,24,26,.12) 0%,rgba(23,24,26,.18) 40%,var(--paper) 100%);}
+.bg i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;background:#fff;will-change:transform;}
+.bg i:nth-child(2){width:340px;height:340px;bottom:-110px;left:-120px;animation:d1 16s ease-in-out infinite alternate;}
+.bg i:nth-child(3){width:300px;height:300px;top:46%;right:-120px;background:#E4E2DB;animation:d2 19s ease-in-out infinite alternate;}
+@keyframes d1{to{transform:translate(90px,-80px) scale(1.2);}}
+@keyframes d2{to{transform:translate(-80px,70px) scale(1.15);}}
+
+/* ---------- structure ---------- */
+.app{position:relative;z-index:2;max-width:460px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 18px) 22px calc(env(safe-area-inset-bottom) + 18px);}
+.top{display:flex;align-items:center;justify-content:space-between;height:40px;flex-shrink:0;}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.01em;font-size:1.02rem;color:var(--ink);}
+.brand b{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--ink);}
+.brand b img{width:20px;height:auto;display:block;}
+.back{border:1px solid var(--hair-strong);background:rgba(255,255,255,.75);color:var(--ink);height:36px;padding:0 14px;border-radius:99px;font-weight:600;font-size:.85rem;font-family:inherit;display:none;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.back.show{display:inline-flex;align-items:center;gap:6px;}
+.screens{flex:1;position:relative;display:flex;flex-direction:column;}
+.screen{display:none;flex:1;flex-direction:column;animation:in .55s cubic-bezier(.2,.8,.2,1) both;}
+.screen.on{display:flex;}
+.screen:not(#s-home){padding-top:46px;}
+@keyframes in{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:none;}}
+.stagger>*{opacity:0;animation:in .6s cubic-bezier(.2,.8,.2,1) both;}
+.stagger>*:nth-child(1){animation-delay:.05s}.stagger>*:nth-child(2){animation-delay:.12s}
+.stagger>*:nth-child(3){animation-delay:.19s}.stagger>*:nth-child(4){animation-delay:.26s}
+.stagger>*:nth-child(5){animation-delay:.33s}.stagger>*:nth-child(6){animation-delay:.40s}
+
+h1{font-family:var(--serif);font-weight:600;font-size:2.3rem;line-height:1.08;letter-spacing:-.02em;margin:0 0 12px;color:var(--ink);}
+h1 em{font-style:italic;font-weight:500;color:var(--charcoal);}
+h2{font-family:var(--serif);font-weight:600;font-size:1.7rem;line-height:1.12;letter-spacing:-.015em;margin:0 0 10px;color:var(--ink);}
+p{margin:0;color:var(--graphite);line-height:1.55;font-size:1rem;}
+.lead{font-size:1.04rem;}
+.small{font-size:.8rem;color:var(--mist);}
+.sp{flex:1;min-height:14px;}
+
+/* ---------- carte NFC 3D ---------- */
+.stage{perspective:900px;display:grid;place-items:center;padding:34px 0 20px;}
+.nfc{width:min(76vw,300px);aspect-ratio:1.586;border-radius:20px;position:relative;
+  background:linear-gradient(145deg,#2b2c2f 0%,#151618 55%,#1f2022 100%);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 30px 55px -22px rgba(23,24,26,.55),0 8px 18px -8px rgba(23,24,26,.35);
+  transform-style:preserve-3d;animation:float 6s ease-in-out infinite;overflow:hidden;}
+.nfc::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 50%,transparent 65%);transform:translateX(-120%);animation:shine 5s ease-in-out infinite;}
+.nfc img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50%;height:auto;opacity:.95;}
+.nfc .wave{position:absolute;right:18px;top:16px;width:30px;height:30px;color:#fff;opacity:.85;}
+.nfc .tag{position:absolute;left:20px;top:20px;font-size:.62rem;letter-spacing:.2em;color:var(--mist);text-transform:uppercase;font-weight:600;}
+@keyframes float{0%,100%{transform:rotateX(14deg) rotateY(-16deg) translateY(0);}50%{transform:rotateX(8deg) rotateY(14deg) translateY(-12px);}}
+@keyframes shine{0%,55%{transform:translateX(-120%);}85%,100%{transform:translateX(120%);}}
+
+/* ---------- boutons ---------- */
+.btn{width:100%;border:0;border-radius:16px;min-height:60px;padding:0 20px;font-weight:600;font-size:1.04rem;font-family:inherit;color:var(--paper);cursor:pointer;
+  background:var(--ink);box-shadow:0 14px 30px -14px rgba(23,24,26,.7);display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
+  transition:transform .15s ease,box-shadow .15s ease,opacity .2s;}
+.btn:active{transform:scale(.97);}
+.btn.ghost{background:var(--white);border:1px solid var(--hair-strong);box-shadow:none;color:var(--ink);}
+.link{background:none;border:0;color:var(--graphite);font-weight:500;font-size:.9rem;font-family:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:10px;align-self:center;text-align:center;}
+.stack{display:flex;flex-direction:column;gap:12px;}
+
+/* choix appareil */
+.choice{position:relative;text-align:left;border-radius:18px;border:1px solid var(--hair);background:var(--white);color:var(--ink);
+  padding:18px;display:flex;align-items:center;gap:16px;cursor:pointer;font-family:inherit;width:100%;
+  box-shadow:0 10px 24px -16px rgba(23,24,26,.35);transition:transform .15s,border-color .2s;}
+.choice:active{transform:scale(.98);}
+.choice .ic{width:52px;height:52px;border-radius:15px;background:var(--paper-dim);display:grid;place-items:center;flex-shrink:0;color:var(--charcoal);}
+.choice .ic svg{width:26px;height:26px;}
+.choice strong{display:block;font-family:var(--serif);font-weight:600;font-size:1.25rem;letter-spacing:-.01em;}
+.choice span.s{display:block;color:var(--graphite);font-size:.86rem;margin-top:2px;}
+.choice .arr{margin-left:auto;color:var(--mist);font-size:1.4rem;}
+.choice.det{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink),0 16px 34px -18px rgba(23,24,26,.5);}
+.badge{position:absolute;top:-10px;right:16px;background:var(--ink);color:var(--paper);font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;}
+
+.linkbox{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--hair);border-radius:14px;padding:12px 14px;margin:0 0 16px;}
+.linkbox .d{width:8px;height:8px;border-radius:50%;background:var(--ink);flex-shrink:0;}
+.linkbox code{font:600 .84rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+.linkbox small{color:var(--mist);font-size:.7rem;display:block;font-family:inherit;margin-bottom:2px;}
+
+/* étapes */
+.steps{list-style:none;margin:6px 0 18px;padding:0;counter-reset:s;display:flex;flex-direction:column;gap:12px;}
+.steps li{counter-increment:s;display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--hair);border-radius:16px;padding:14px 16px;color:var(--charcoal);line-height:1.4;font-size:.98rem;}
+.steps li::before{content:counter(s);flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--ink);display:grid;place-items:center;font-weight:700;font-size:.85rem;color:var(--paper);margin-top:-1px;}
+.steps li b{color:var(--ink);font-weight:700;}
+.steps li em{font-style:normal;font-weight:700;color:var(--ink);background:var(--paper-dim);padding:1px 6px;border-radius:6px;}
+
+.prog{display:flex;gap:6px;margin:4px 0 22px;}
+.prog i{flex:1;height:4px;border-radius:4px;background:var(--hair);overflow:hidden;position:relative;}
+.prog i::after{content:"";position:absolute;inset:0;background:var(--ink);transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.2,.8,.2,1);}
+.prog i.d::after{transform:scaleX(1);}
+.kicker{font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--graphite);margin-bottom:10px;}
+.ios-step{display:none;flex-direction:column;flex:1;}
+.ios-step.on{display:flex;animation:in .5s cubic-bezier(.2,.8,.2,1) both;}
+.note{background:var(--paper-dim);border:1px solid var(--hair-strong);border-radius:14px;padding:12px 14px;font-size:.86rem;color:var(--graphite);line-height:1.45;margin-top:12px;}
+.note b{color:var(--ink);}
+
+/* scan */
+.radar{position:relative;width:240px;height:240px;margin:26px auto 26px;display:grid;place-items:center;}
+.radar i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:ring 2.4s cubic-bezier(.2,.6,.3,1) infinite;}
+.radar i:nth-child(2){animation-delay:.8s}.radar i:nth-child(3){animation-delay:1.6s}
+.radar .core{position:relative;z-index:2;width:92px;height:92px;border-radius:50%;background:var(--ink);display:grid;place-items:center;box-shadow:0 18px 40px -12px rgba(23,24,26,.6);}
+.radar .core svg{width:44px;height:44px;color:var(--paper);}
+@keyframes ring{0%{transform:scale(.4);opacity:.8;}100%{transform:scale(1.15);opacity:0;}}
+.center{text-align:center;}
+.center p{max-width:320px;margin:0 auto;}
+
+/* succès / erreur */
+.check{width:120px;height:120px;border-radius:50%;margin:26px auto 22px;display:grid;place-items:center;background:var(--white);border:2px solid var(--ink);box-shadow:0 18px 40px -18px rgba(23,24,26,.5);animation:pop .6s cubic-bezier(.2,1.4,.4,1) both;}
+.check svg{width:58px;height:58px;color:var(--ink);}
+.check svg path{stroke-dasharray:60;stroke-dashoffset:60;animation:draw .6s .35s ease forwards;}
+@keyframes pop{from{transform:scale(.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+@keyframes draw{to{stroke-dashoffset:0;}}
+.warn{border-color:var(--mist);}
+.warn svg{color:var(--graphite);}
+.warn svg path{stroke-dashoffset:0;animation:none;}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden;}
+.confetti span{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;opacity:0;animation:fall 2.4s ease-out forwards;}
+@keyframes fall{0%{opacity:1;transform:translate3d(0,0,0) rotate(0);}100%{opacity:0;transform:translate3d(var(--x),105vh,0) rotate(var(--r));}}
+
+.foot{text-align:center;color:var(--mist);font-size:.72rem;padding-top:18px;line-height:1.5;flex-shrink:0;}
+.desk{display:none;background:var(--white);border:1px solid var(--hair-strong);color:var(--graphite);border-radius:14px;padding:10px 14px;font-size:.84rem;margin-bottom:10px;text-align:center;}
+@media (min-width:760px) and (pointer:fine){.desk{display:block;}}
+@media (max-width:359px){h1{font-size:1.9rem;}h2{font-size:1.45rem;}}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+  .nfc{transform:rotateX(10deg) rotateY(-10deg);}
+  .stagger>*{opacity:1;}
+}
+
+/* ---------- mouvement et expérience ---------- */
+.w{display:inline-block;opacity:0;transform:translateY(16px);animation:in .7s var(--d,0s) cubic-bezier(.2,.8,.2,1) both;}
+.stage{animation:cardIn 1.1s .05s cubic-bezier(.2,1.1,.3,1) both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(46px) scale(.9);}to{opacity:1;transform:none;}}
+.nfc .wave path{opacity:.25;animation:wv 1.9s ease-in-out infinite;}
+.nfc .wave path:nth-child(2){animation-delay:.25s}.nfc .wave path:nth-child(3){animation-delay:.5s}
+@keyframes wv{0%,100%{opacity:.2;}40%{opacity:1;}}
+.choice{animation:in .6s both;}
+#c-ios{animation-delay:.9s}#c-and{animation-delay:1.02s}
+.badge{animation:bd 2.4s ease-in-out infinite;}
+@keyframes bd{0%,100%{transform:none;}50%{transform:translateY(-2px);}}
+.steps li{opacity:0;animation:in .55s both;}
+.steps li:nth-child(1){animation-delay:.25s}.steps li:nth-child(2){animation-delay:.42s}.steps li:nth-child(3){animation-delay:.59s}
+.duo{position:relative;width:200px;height:150px;margin:6px auto 18px;display:block;}
+.radar .duo{margin:0;position:relative;z-index:2;}
+.duo .ph{position:absolute;left:50%;top:0;width:84px;height:150px;margin-left:-42px;border:3px solid var(--ink);border-radius:18px;background:var(--white);box-shadow:0 18px 36px -18px rgba(23,24,26,.5);}
+.duo .ph::before{content:"";position:absolute;left:50%;top:7px;width:22px;height:4px;margin-left:-11px;border-radius:4px;background:var(--hair-strong);}
+.duo .ph::after{content:"";position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:pp 3s ease-out infinite;}
+.duo.top .ph::after{top:20%;}
+.duo .cd{position:absolute;left:50%;top:62px;width:100px;height:62px;margin-left:-50px;border-radius:10px;z-index:2;
+  background:linear-gradient(145deg,#2b2c2f,#151618);box-shadow:0 14px 24px -12px rgba(23,24,26,.6);animation:tap 3s ease-in-out infinite;}
+.duo.top .cd{top:4px;}
+@keyframes tap{0%{transform:translate(80px,70px) rotate(18deg);opacity:0;}18%{opacity:1;}45%,72%{transform:translate(0,0) rotate(0);opacity:1;}100%{transform:translate(0,0) rotate(0);opacity:0;}}
+@keyframes pp{0%,40%{transform:scale(.3);opacity:0;}50%{opacity:.8;}100%{transform:scale(2.6);opacity:0;}}
+.tip{margin-top:14px;min-height:2.6em;font-size:.9rem;color:var(--graphite);transition:opacity .35s;}
+.tip.out{opacity:0;}
+.ios-step.on > *{animation:in .5s both;}
+.ios-step.on > *:nth-child(2){animation-delay:.06s}.ios-step.on > *:nth-child(3){animation-delay:.12s}.ios-step.on > *:nth-child(4){animation-delay:.18s}
+.btn{position:relative;overflow:hidden;}
+.btn:not(.ghost)::after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);animation:glint 4.5s 1.5s ease-in-out infinite;}
+@keyframes glint{0%,70%{left:-80px;}100%{left:120%;}}
+
+/* ---------- dynamisme ---------- */
+.tilt{transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .14s linear;cursor:pointer;}
+.tilt.spin{animation:spin 1s cubic-bezier(.3,.8,.3,1);}
+@keyframes spin{from{transform:rotateY(0) scale(1);}50%{transform:rotateY(180deg) scale(1.08);}to{transform:rotateY(360deg) scale(1);}}
+h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 100% 0/280% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  animation:in .7s var(--d,0s) cubic-bezier(.2,.8,.2,1) both,shim 5s 2.2s ease-in-out infinite;}
+@keyframes shim{0%{background-position:100% 0;}40%,100%{background-position:0 0;}}
+.chg{min-height:54px;margin-top:2px;gap:10px;}
+.chg svg{flex-shrink:0;}
+.field{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--hair-strong);border-radius:16px;padding:0 16px;min-height:62px;transition:border-color .2s,box-shadow .2s;}
+.field:focus-within{border-color:var(--ink);box-shadow:0 0 0 4px rgba(23,24,26,.08);}
+.field .d{width:8px;height:8px;border-radius:50%;background:var(--mist);flex-shrink:0;transition:background .2s,transform .3s;}
+.field.ok .d{background:var(--ink);transform:scale(1.4);}
+.field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:600 1rem var(--sans);color:var(--ink);padding:18px 0;}
+.field input::placeholder{color:var(--mist);font-weight:500;}
+.field.bad{border-color:var(--graphite);animation:shake .4s;}
+@keyframes shake{25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+.choice[disabled]{opacity:.45 !important;pointer-events:none;box-shadow:none;}
+.choice{transition:transform .15s,border-color .2s,opacity .3s;}
+.check:not(.warn)::before,.check:not(.warn)::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:burst 1.7s .3s ease-out 2;}
+.check:not(.warn)::after{animation-delay:.65s;}
+.check{position:relative;}
+@keyframes burst{0%{transform:scale(1);opacity:.5;}100%{transform:scale(1.9);opacity:0;}}
+.rp{position:absolute;border-radius:50%;background:rgba(255,255,255,.32);transform:scale(0);animation:rp .65s ease-out forwards;pointer-events:none;}
+.btn.ghost .rp{background:rgba(23,24,26,.12);}
+@keyframes rp{to{transform:scale(1);opacity:0;}}
+.two{display:flex;flex-direction:column;align-items:center;line-height:1.25;}
+.two b{font-weight:600;font-size:1.02rem;}
+.two small{font-size:.8rem;color:var(--graphite);font-weight:500;margin-top:2px;}
+.chg{min-height:62px;}
+#s-device .choice{animation-delay:.2s;}#s-device #c-and{animation-delay:.32s;}
+.help{margin-top:6px;border:1.5px dashed var(--hair-strong);border-radius:16px;padding:14px 16px;background:transparent;}
+.help-t{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);}
+.help-t span{display:block;text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:500;color:var(--graphite);margin-top:3px;}
+.help-b{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 10px;}
+.mini{border:1px solid var(--hair-strong);background:var(--white);color:var(--ink);border-radius:99px;height:38px;padding:0 16px;font:600 .85rem var(--sans);cursor:pointer;transition:transform .15s;}
+.mini:active{transform:scale(.96);}
+.help p{font-size:.8rem;line-height:1.4;color:var(--mist);}
+.help p b{color:var(--graphite);}
+:root{--logo:url("rg-logo.png");}
+/* ---------- scènes qui comblent les vides ---------- */
+.sp.vis{position:relative;min-height:0;}
+.v{position:absolute;left:50%;top:50%;margin:-85px 0 0 -135px;width:270px;height:170px;perspective:760px;transition:transform .2s;visibility:hidden;}
+.v>*{position:absolute;}
+.floor{left:15px;right:15px;top:22px;bottom:22px;transform:rotateX(64deg);transform-style:preserve-3d;}
+.floor::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid var(--hair-strong);}
+.floor i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:ring3 3.6s ease-out infinite;}
+.floor i:nth-child(2){animation-delay:1.2s}.floor i:nth-child(3){animation-delay:2.4s}
+@keyframes ring3{0%{transform:scale(.12);opacity:.7;}100%{transform:scale(1);opacity:0;}}
+.floor .orb{position:absolute;inset:0;animation:spinz 7s linear infinite;}
+.floor .orb b{position:absolute;left:50%;top:-8px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 6px rgba(23,24,26,.1);}
+@keyframes spinz{to{transform:rotate(360deg);}}
+.pt{position:absolute;left:var(--l);bottom:40px;width:6px;height:6px;border-radius:2px;background:var(--ink);opacity:0;animation:rise 4.2s var(--d) ease-in infinite;}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0;}20%{opacity:.5;}100%{transform:translateY(-110px) rotate(200deg);opacity:0;}}
+.trio{inset:0;transform-style:preserve-3d;}
+.p3{top:10px;width:76px;height:148px;border:3px solid var(--ink);border-radius:18px;background:var(--white);box-shadow:0 18px 30px -16px rgba(23,24,26,.5);transform-style:preserve-3d;}
+.p3.l{left:10px;animation:swayL 5s ease-in-out infinite alternate;}
+.p3.r{right:10px;animation:swayR 5s ease-in-out infinite alternate;}
+@keyframes swayL{from{transform:rotateY(22deg) rotateZ(-3deg) translateY(0);}to{transform:rotateY(34deg) rotateZ(-3deg) translateY(-8px);}}
+@keyframes swayR{from{transform:rotateY(-22deg) rotateZ(3deg) translateY(-8px);}to{transform:rotateY(-34deg) rotateZ(3deg) translateY(0);}}
+.p3::before{content:"";position:absolute;top:7px;left:50%;width:22px;height:6px;margin-left:-11px;border-radius:6px;background:var(--ink);}
+.p3.r::before{width:7px;height:7px;margin-left:-3px;border-radius:50%;}
+.p3 i{position:absolute;left:12px;right:12px;height:8px;border-radius:4px;background:var(--paper-dim);}
+.p3 i:nth-of-type(1){top:30px}.p3 i:nth-of-type(2){top:46px;right:26px}.p3 i:nth-of-type(3){top:62px;right:18px}
+.p3 em{position:absolute;left:0;right:0;bottom:12px;text-align:center;font:700 .62rem var(--sans);letter-spacing:.05em;color:var(--graphite);font-style:normal;}
+.c3{left:50%;top:50px;width:92px;height:58px;margin-left:-46px;border-radius:10px;background:linear-gradient(145deg,#2b2c2f,#151618);box-shadow:0 20px 30px -14px rgba(23,24,26,.6);animation:hov 3.2s ease-in-out infinite;transform-style:preserve-3d;}
+.trio .c3{transform:translateZ(44px);}
+.c3::after{content:"";position:absolute;inset:14% 20%;background:var(--logo) center/contain no-repeat;opacity:.92;}
+.c3::before{content:"";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:wv3 2.4s ease-out infinite;}
+@keyframes hov{0%,100%{transform:translateZ(44px) translateY(0) rotateY(-10deg);}50%{transform:translateZ(44px) translateY(-12px) rotateY(10deg);}}
+@keyframes wv3{0%{transform:scale(1);opacity:.55;}100%{transform:scale(4.2);opacity:0;}}
+.c3.big{width:150px;height:94px;margin-left:-75px;top:28px;border-radius:14px;animation:hov2 4s ease-in-out infinite alternate;}
+@keyframes hov2{from{transform:rotateY(-20deg) rotateX(6deg) translateY(0);}to{transform:rotateY(20deg) rotateX(-4deg) translateY(-10px);}}
+.c3.sm{width:76px;height:48px;margin-left:-38px;top:112px;animation:hov2 4s ease-in-out infinite alternate;}
+.c3.big .bd{position:absolute;right:-14px;top:-14px;width:34px;height:34px;border-radius:50%;background:var(--white);border:2px solid var(--ink);display:grid;place-items:center;font:700 1rem var(--sans);color:var(--ink);}
+.c3.dim{opacity:.75;animation:hov2 4s ease-in-out infinite alternate,flick 3.4s steps(1) infinite;}
+@keyframes flick{0%,86%,90%,100%{filter:none;}88%{filter:brightness(2.2);}}
+.flow{inset:0;transform-style:preserve-3d;}
+.pill{left:0;right:0;top:6px;margin:auto;width:max-content;max-width:250px;background:var(--white);border:1px solid var(--hair-strong);border-radius:99px;padding:10px 18px;font:600 .85rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);box-shadow:0 14px 24px -14px rgba(23,24,26,.5);animation:pl 4s ease-in-out infinite alternate;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@keyframes pl{from{transform:rotateX(14deg) translateY(0);}to{transform:rotateX(-6deg) translateY(-5px);}}
+.beam{left:50%;top:50px;height:56px;width:0;margin-left:-1px;border-left:2px dashed var(--hair-strong);}
+.beam u{position:absolute;left:-5px;top:0;width:8px;height:8px;border-radius:50%;background:var(--ink);opacity:0;animation:drop 1.8s ease-in infinite;}
+.beam u:nth-child(2){animation-delay:.6s}.beam u:nth-child(3){animation-delay:1.2s}
+@keyframes drop{0%{transform:translateY(0);opacity:0;}20%{opacity:1;}100%{transform:translateY(50px);opacity:0;}}
+.phb{left:50%;top:6px;width:96px;height:158px;margin-left:-48px;border:3px solid var(--ink);border-radius:22px;background:linear-gradient(160deg,#fff,#E4E2DB);box-shadow:0 22px 34px -16px rgba(23,24,26,.5);animation:phr 6s ease-in-out infinite alternate;}
+@keyframes phr{from{transform:rotateY(-24deg) rotateX(6deg);}to{transform:rotateY(24deg) rotateX(-4deg);}}
+.phb::before{content:"";position:absolute;left:9px;top:9px;width:30px;height:30px;border-radius:10px;background:var(--ink);}
+.phb i{position:absolute;left:50%;top:56%;width:46px;height:46px;margin:-23px;border-radius:50%;border:2px dashed var(--graphite);animation:spinz 12s linear infinite;}
+.phb::after{content:"";position:absolute;left:50%;top:56%;width:46px;height:46px;margin:-23px;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:wv3 2.4s ease-out infinite;}
+.phb em{position:absolute;left:0;right:0;top:calc(56% + 32px);text-align:center;font:700 .6rem var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--graphite);font-style:normal;}
+.win{left:50%;top:14px;width:210px;height:132px;margin-left:-105px;border:3px solid var(--ink);border-radius:14px;background:var(--white);box-shadow:0 20px 30px -16px rgba(23,24,26,.5);animation:hov2 5s ease-in-out infinite alternate;}
+.win .bar{position:absolute;left:12px;right:12px;top:12px;height:20px;border-radius:99px;background:var(--paper-dim);}
+.win .ln{position:absolute;left:14px;height:9px;border-radius:5px;background:var(--paper-dim);}
+.win .l1{top:52px;right:60px}.win .l2{top:70px;right:100px}
+.win .cur{left:30px;top:30px;animation:cur 3.4s ease-in-out infinite;}
+@keyframes cur{0%,100%{transform:translate(0,0);}50%{transform:translate(110px,46px);}}
+.cb{left:50%;top:8px;width:108px;height:142px;margin-left:-54px;border:3px solid var(--ink);border-radius:14px;background:var(--white);box-shadow:0 20px 30px -16px rgba(23,24,26,.5);animation:hov2 4.4s ease-in-out infinite alternate;}
+.cb::before{content:"";position:absolute;left:50%;top:-9px;width:46px;height:18px;margin-left:-23px;border-radius:7px;background:var(--ink);}
+.cb i{position:absolute;left:14px;height:9px;border-radius:5px;background:var(--paper-dim);}
+.cb .l1{top:30px;right:20px}.cb .l2{top:50px;right:36px}
+.cb .l3{top:76px;right:14px;background:var(--ink);animation:wr 3s ease-in-out infinite;transform-origin:left;}
+@keyframes wr{0%{transform:scaleX(0);}45%,100%{transform:scaleX(1);}}
+.cb b{position:absolute;right:-14px;bottom:-14px;width:36px;height:36px;border-radius:50%;background:var(--ink);display:grid;place-items:center;animation:pop3 3s ease-in-out infinite;}
+@keyframes pop3{0%,45%{transform:scale(0);}60%{transform:scale(1.2);}70%,100%{transform:scale(1);}}
+.tile{left:50%;top:10px;width:94px;height:94px;margin-left:-47px;border-radius:24px;background:linear-gradient(145deg,#2b2c2f,#151618);box-shadow:0 24px 36px -16px rgba(23,24,26,.6);display:grid;place-items:center;animation:tl 4s ease-in-out infinite alternate;overflow:hidden;}
+.tile::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.18) 50%,transparent 65%);transform:translateX(-120%);animation:shine 3.6s ease-in-out infinite;}
+@keyframes tl{from{transform:rotateY(-22deg) translateY(0);}to{transform:rotateY(22deg) translateY(-6px);}}
+.dl{left:50%;top:122px;margin-left:-15px;animation:bnc 1.3s ease-in-out infinite;}
+@keyframes bnc{0%,100%{transform:translateY(0);}50%{transform:translateY(10px);}}
+.p3,.c3,.pill,.beam{position:absolute;}
+@media (max-height:700px){.stage{padding:14px 0 6px;}.nfc{width:min(60vw,236px);}h1{font-size:2rem;margin-bottom:8px;}}
+.callbox{display:flex;gap:14px;align-items:center;border:1.5px solid var(--ink);border-radius:16px;padding:14px 16px;background:var(--white);margin-top:14px;}
+.callbox .ci{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;}
+.callbox b{display:block;font-weight:700;color:var(--ink);font-size:.98rem;}
+.callbox span:not(.ci){display:block;color:var(--graphite);font-size:.86rem;margin-top:2px;}
+.callbox a{display:inline-block;margin-top:4px;font-weight:700;color:var(--ink);font-size:1.02rem;text-decoration:underline;text-underline-offset:3px;}
+@property --p{syntax:'<number>';inherits:false;initial-value:0;}
+.inst{inset:0;}
+.inst .ic{position:absolute;top:14px;width:88px;height:88px;border-radius:20px;box-shadow:0 18px 28px -14px rgba(23,24,26,.55),0 0 0 1px rgba(23,24,26,.08);overflow:hidden;}
+.inst .ic img{display:block;width:100%;height:100%;}
+.inst .as{left:20px;animation:bob 3.6s ease-in-out infinite alternate;}
+.inst .nt{right:20px;animation:ntc 6s ease-in-out infinite;}
+@keyframes bob{from{transform:translateY(0);}to{transform:translateY(-6px);}}
+@keyframes ntc{0%{opacity:0;transform:scale(.55) translateY(10px);}10%{opacity:1;transform:scale(1) translateY(0);}68%{transform:scale(1);}74%{transform:scale(1.12);}82%,94%{transform:scale(1);opacity:1;}100%{opacity:0;transform:scale(.9);}}
+.inst .nt img{animation:ntg 6s ease-in-out infinite;}
+@keyframes ntg{0%,12%{filter:grayscale(1) brightness(.9);}70%{filter:grayscale(1) brightness(.9);}76%,100%{filter:none;}}
+.inst .ov{position:absolute;inset:0;background:conic-gradient(from 0deg,transparent calc(var(--p)*1%),rgba(23,24,26,.5) 0);animation:pie 6s linear infinite;}
+@keyframes pie{0%,12%{--p:0;opacity:1;}68%{--p:100;opacity:1;}72%,100%{--p:100;opacity:0;}}
+.inst .okb{position:absolute;right:6px;bottom:6px;width:24px;height:24px;border-radius:50%;background:var(--ink);display:grid;place-items:center;animation:okp 6s ease-in-out infinite;}
+@keyframes okp{0%,72%{transform:scale(0);}80%{transform:scale(1.25);}86%,100%{transform:scale(1);}}
+.trail{position:absolute;left:112px;right:112px;top:56px;height:0;border-top:2px dashed var(--hair-strong);}
+.trail u{position:absolute;top:-6px;left:0;width:10px;height:10px;border-radius:50%;background:var(--ink);opacity:0;animation:go 1.5s ease-in-out infinite;}
+.trail u:nth-child(2){animation-delay:.5s}.trail u:nth-child(3){animation-delay:1s}
+@keyframes go{0%{transform:translateX(0);opacity:0;}20%{opacity:1;}100%{transform:translateX(46px);opacity:0;}}
+.getbtn{position:absolute;left:50%;top:118px;width:128px;height:32px;margin-left:-64px;border-radius:99px;background:var(--ink);color:var(--paper);font:700 .82rem var(--sans);overflow:hidden;animation:gb 6s ease-in-out infinite;}
+.getbtn span{position:absolute;inset:0;display:grid;place-items:center;opacity:0;}
+.g1{animation:g1 6s infinite;}.g2{animation:g2 6s infinite;}.g3{animation:g3 6s infinite;}
+@keyframes g1{0%,12%{opacity:1;}16%,100%{opacity:0;}}
+@keyframes g2{0%,13%{opacity:0;}17%,68%{opacity:1;}72%,100%{opacity:0;}}
+@keyframes g3{0%,70%{opacity:0;}76%,94%{opacity:1;}100%{opacity:0;}}
+@keyframes gb{0%,12%{transform:scale(1);}14%{transform:scale(.94);}18%,100%{transform:scale(1);}}
+.done3d{perspective:1100px;display:grid;place-items:center;padding:22px 0 24px;}
+.dcard{position:relative;width:min(74vw,290px);aspect-ratio:1.59;transform-style:preserve-3d;
+  animation:dIn 1.5s cubic-bezier(.2,.9,.2,1) both,dSway 7s 1.5s ease-in-out infinite alternate;}
+@keyframes dIn{from{transform:rotateY(-110deg) rotateX(24deg) scale(.55) translateY(50px);opacity:0;}60%{opacity:1;}to{transform:rotateY(-24deg) rotateX(7deg) scale(1);opacity:1;}}
+@keyframes dSway{from{transform:rotateY(-24deg) rotateX(7deg);}to{transform:rotateY(24deg) rotateX(-3deg) translateY(-6px);}}
+.dcard::before{content:"";position:absolute;inset:0;border-radius:15px;background:#2f78b4;transform:translateZ(-6px);box-shadow:0 30px 40px -18px rgba(23,24,26,.55);}
+.dcard .face{position:absolute;inset:0;border-radius:15px;overflow:hidden;box-shadow:0 0 0 1px rgba(23,24,26,.1);}
+.dcard .face img{display:block;width:100%;height:100%;object-fit:cover;}
+.dcard .face::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.28) 50%,transparent 65%);transform:translateX(-120%);animation:shine 4.5s 1.8s ease-in-out infinite;}
+.dcard .vb{position:absolute;right:-14px;bottom:-14px;width:50px;height:50px;border-radius:50%;background:var(--ink);border:3px solid var(--paper);display:grid;place-items:center;transform:translateZ(38px);animation:vbp .7s 1.3s cubic-bezier(.2,1.4,.4,1) both;box-shadow:0 12px 20px -8px rgba(23,24,26,.6);}
+.dcard .vb::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--ink);opacity:0;animation:burst 1.7s 1.8s ease-out 2;}
+@keyframes vbp{from{transform:translateZ(38px) scale(0);}to{transform:translateZ(38px) scale(1);}}
+.call{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border:1px solid var(--hair-strong);border-radius:14px;background:var(--white);text-decoration:none;color:var(--ink);min-width:0;}
+.call .ci{flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;}
+.call .ct{flex:1;min-width:0;line-height:1.25;}
+.call .ct b{display:block;font-weight:700;font-size:.88rem;}
+.call .ct small{display:block;color:var(--graphite);font-size:.78rem;margin-top:1px;}
+.call .num{flex-shrink:0;font-weight:700;font-size:.82rem;letter-spacing:.01em;white-space:nowrap;}
+@media (max-width:359px){.call{flex-wrap:wrap;}.call .num{width:100%;padding-left:48px;}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><div class="mt"></div><i></i><i></i></div>
+
+<div class="app">
+  <div class="top">
+    <div class="brand">RG.card</div>
+    <button class="back" id="back" type="button" aria-label="Retour">&#8592; Retour</button>
+  </div>
+
+  <div class="desk">Cette page se vit sur téléphone. Ouvrez-la depuis votre mobile pour activer votre carte.</div>
+
+  <main class="screens">
+
+    <!-- ACCUEIL -->
+    <section class="screen on stagger" id="s-home">
+      <div class="stage" aria-hidden="true">
+        <div class="tilt" id="tilt"><div class="nfc">
+          <svg class="wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 9a6 6 0 0 1 0 6"/><path d="M9 6.5a10 10 0 0 1 0 11"/><path d="M13 4a14 14 0 0 1 0 16"/></svg>
+          <img src="rg-logo.png" alt="">
+        </div></div>
+      </div>
+      <div>
+        <h1><span class="w" style="--d:.25s">Un</span> <span class="w" style="--d:.33s">geste</span> <span class="w" style="--d:.41s">suffit</span> <span class="w" style="--d:.49s">pour</span> <em><span class="w" style="--d:.65s">activer</span> <span class="w" style="--d:.73s">votre</span> <span class="w" style="--d:.81s">carte.</span></em></h1>
+      </div>
+      <div class="sp vis" aria-hidden="true"><div class="v"><div class="floor"><i></i><i></i><i></i><div class="orb"><b></b></div></div><span class="pt" style="--l:14%;--d:0.0s"></span><span class="pt" style="--l:30%;--d:1.3s"></span><span class="pt" style="--l:46%;--d:0.6s"></span><span class="pt" style="--l:62%;--d:2.1s"></span><span class="pt" style="--l:78%;--d:0.9s"></span><span class="pt" style="--l:90%;--d:1.8s"></span></div></div>
+      <div class="stack">
+        <button class="btn" id="act" type="button">Activer ma carte</button>
+        <button class="btn ghost chg" id="chg" type="button"><span class="two"><b>Ma carte est déjà activée</b><small>Changer mon lien</small></span></button>
+        <p class="small center" style="margin-top:2px">Environ une minute &middot; Sans compte &middot; Aucune donnée collectée</p>
+      </div>
+    </section>
+
+    <!-- CHOIX DU TÉLÉPHONE -->
+    <section class="screen" id="s-device">
+      <div class="stagger">
+        <div class="kicker">Activation</div>
+        <h2>Quel est votre téléphone ?</h2>
+        <p class="lead">Choisissez votre méthode, on vous guide pas à pas.</p>
+      </div>
+      <div class="sp vis" aria-hidden="true"><div class="v"><div class="trio"><div class="p3 l"><i></i><i></i><i></i><em>iPhone</em></div><div class="p3 r"><i></i><i></i><i></i><em>Android</em></div><div class="c3"></div></div></div></div>
+      <div class="stack">
+        <button class="choice" id="c-ios" type="button">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 5h3"/><path d="M11 19h2"/></svg></span>
+          <span><strong>iPhone</strong><span class="s">Guidé en 4 étapes</span></span><span class="arr">&#8250;</span>
+        </button>
+        <button class="choice" id="c-and" type="button">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 5h3"/><circle cx="12" cy="17.5" r=".8" fill="currentColor"/></svg></span>
+          <span><strong>Android</strong><span class="s">Un seul bouton</span></span><span class="arr">&#8250;</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- CHANGER MON LIEN -->
+    <section class="screen" id="s-change">
+      <div class="stagger">
+        <div class="kicker">Mon lien</div>
+        <h2>Changer mon lien</h2>
+        <p class="lead" style="margin-bottom:18px">Collez la nouvelle adresse à enregistrer sur votre carte, puis choisissez votre méthode.</p>
+        <div class="field" id="field"><span class="d"></span><input id="newurl" type="text" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://votre-lien.fr" aria-label="Nouveau lien"></div>
+        <p class="small" id="urlerr" style="min-height:1.4em;margin-top:8px"></p>
+      </div>
+      <div class="sp vis" aria-hidden="true"><div class="v"><div class="flow"><div class="pill"><span id="flow-t">votre-lien.fr</span></div><div class="beam"><u></u><u></u><u></u></div><div class="c3 sm"></div></div></div></div>
+      <div class="stack" id="chg-choices">
+        <p class="small center">Comment voulez-vous l'enregistrer ?</p>
+        <button class="choice" id="c-ios2" type="button" disabled>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 5h3"/><path d="M11 19h2"/></svg></span>
+          <span><strong>iPhone</strong><span class="s">Guidé en 4 étapes</span></span><span class="arr">&#8250;</span>
+        </button>
+        <button class="choice" id="c-and2" type="button" disabled>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 5h3"/><circle cx="12" cy="17.5" r=".8" fill="currentColor"/></svg></span>
+          <span><strong>Android</strong><span class="s">Un seul bouton</span></span><span class="arr">&#8250;</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ANDROID : prêt -->
+    <section class="screen stagger" id="s-and">
+      <div class="kicker">Android</div>
+      <h2>Prêt à activer ?</h2>
+      <p class="lead" style="margin-bottom:18px">Votre carte va recevoir l'adresse de votre page de contact. Cela prend quelques secondes.</p>
+      <div class="linkbox"><span class="d"></span><div style="min-width:0"><small>Lien enregistré sur la carte</small><code class="lk"></code></div></div>
+      <ol class="steps">
+        <li><span>Vérifiez que le <b>NFC</b> est activé dans les réglages du téléphone.</span></li>
+        <li><span>Appuyez sur <em>Activer ma carte</em> ci-dessous.</span></li>
+        <li><span>Collez la carte <b>au dos du téléphone</b>, vers le haut, et ne bougez plus.</span></li>
+      </ol>
+      <p class="small" style="margin-top:-4px">L'antenne NFC se trouve en général au centre du dos, ou près de l'appareil photo.</p>
+      <div class="sp vis" aria-hidden="true"><div class="v"><div class="phb"><i></i><em>Zone NFC</em></div></div></div>
+      <div class="stack">
+        <button class="btn" id="go-and" type="button">Activer ma carte</button>
+        <button class="link" id="to-ios" type="button">Utiliser l'autre méthode, avec l'application NFC Tools</button>
+      </div>
+    </section>
+
+    <!-- ANDROID : navigateur non compatible -->
+    <section class="screen stagger" id="s-unsup">
+      <div class="check warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg></div>
+      <div class="center">
+        <h2>Ouvrez cette page dans Chrome</h2>
+        <p>Ce navigateur ne permet pas d'écrire sur la carte. Copiez l'adresse de cette page et ouvrez-la dans Chrome sur votre téléphone Android.</p>
+      </div>
+      <div class="sp vis" aria-hidden="true"><div class="v"><div class="win"><span class="bar"></span><span class="ln l1"></span><span class="ln l2"></span><svg class="cur" viewBox="0 0 24 24" width="26" height="26"><path d="M5 3l14 8-6 2-3 6z" fill="#17181A" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div></div>
+      <div class="stack">
+        <button class="btn" id="copy-page" type="button">Copier l'adresse de la page</button>
+        <button class="link" id="to-ios2" type="button">Utiliser l'application NFC Tools à la place</button>
+      </div>
+    </section>
+
+    <!-- ANDROID : scan -->
+    <section class="screen" id="s-scan">
+      <div class="radar" aria-hidden="true"><i></i><i></i><i></i>
+        <div class="duo"><div class="ph"></div><div class="cd"></div></div>
+      </div>
+      <div class="center">
+        <h2>Approchez la carte</h2>
+        <p>Collez-la au dos du téléphone, vers le haut. Ne la retirez pas avant le message de réussite.</p>
+        <p class="tip" id="tip" aria-live="polite"></p>
+        <p class="small" id="tmr" style="margin-top:6px"></p>
+      </div>
+      <div class="sp"></div>
+      <button class="btn ghost" id="cancel" type="button">Annuler</button>
+    </section>
+
+    <!-- iPHONE -->
+    <section class="screen" id="s-ios">
+      <div class="prog" id="prog"><i></i><i></i><i></i><i></i></div>
+
+      <div class="ios-step on" id="i1">
+        <div class="kicker">Étape 1 sur 4</div>
+        <h2>Copiez votre lien</h2>
+        <p class="lead" style="margin-bottom:18px">C'est l'adresse qui sera enregistrée sur votre carte. Comptez environ une minute en tout, on vous guide pas à pas.</p>
+        <div class="linkbox"><span class="d"></span><div style="min-width:0"><small>Votre lien</small><code class="lk"></code></div></div>
+        <button class="btn" id="copy1" type="button">Copier le lien</button>
+        <p class="small center" style="margin-top:12px">Touchez le bouton, on passe automatiquement à l'étape suivante.</p>
+        <div class="sp vis" aria-hidden="true"><div class="v"><div class="cb"><i class="l1"></i><i class="l2"></i><i class="l3"></i><b><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b></div></div></div>
+      </div>
+
+      <div class="ios-step" id="i2">
+        <div class="kicker">Étape 2 sur 4</div>
+        <h2>Installez NFC Tools</h2>
+        <p class="lead" style="margin-bottom:18px">Une application gratuite, qui permet d'écrire sur la carte. Apple ne l'autorise pas depuis un navigateur.</p>
+        <a class="btn" id="store" href="https://apps.apple.com/app/id1252962749" target="_blank" rel="noopener">Ouvrir l'App Store</a>
+        <p class="small center" style="margin-top:12px">Déjà installée ? Passez à la suite.</p>
+        <div class="sp vis" aria-hidden="true"><div class="v"><div class="inst">
+<div class="ic as"><img src="icone-appstore.png" alt=""></div>
+<div class="trail"><u></u><u></u><u></u></div>
+<div class="ic nt"><img src="icone-nfctools.png" alt=""><span class="ov"></span><b class="okb"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></b></div>
+<div class="getbtn"><span class="g1">Obtenir</span><span class="g2">Installation</span><span class="g3">Ouvrir</span></div>
+</div></div></div>
+        <button class="btn ghost" data-next type="button">Suivant</button>
+      </div>
+
+      <div class="ios-step" id="i3">
+        <div class="kicker">Étape 3 sur 4</div>
+        <h2>Préparez l'écriture</h2>
+        <ol class="steps">
+          <li><span>Ouvrez <b>NFC Tools</b>, puis l'onglet <em>Écrire</em>.</span></li>
+          <li><span>Touchez <em>Ajouter un enregistrement</em>, puis <em>URL / URI</em>.</span></li>
+          <li><span>Collez votre lien, validez avec <em>OK</em>.</span></li>
+        </ol>
+        <div class="help">
+          <div class="help-t">Au cas où <span>vous auriez perdu le lien</span></div>
+          <div class="help-b"><button class="mini" id="copy3" type="button">Copier le lien</button><button class="mini" id="copy3b" type="button">Copier sans https://</button></div>
+          <p>Si l'application ajoute déjà <b>https://</b> toute seule, prenez la version sans.</p>
+        </div>
+        <div class="sp"></div>
+        <button class="btn ghost" data-next type="button">Suivant</button>
+      </div>
+
+      <div class="ios-step" id="i4">
+        <div class="kicker">Étape 4 sur 4</div>
+        <h2>Écrivez sur la carte</h2>
+        <div class="duo top" aria-hidden="true"><div class="ph"></div><div class="cd"></div></div>
+        <ol class="steps">
+          <li><span>Touchez <em>Écrire</em> dans l'application.</span></li>
+          <li><span>Posez la carte contre le <b>haut de l'iPhone</b>.</span></li>
+          <li><span>Attendez le message de réussite avant de la retirer.</span></li>
+        </ol>
+        <div class="sp"></div>
+        <button class="btn" id="ios-done" type="button">C'est fait, je teste</button>
+      </div>
+    </section>
+
+    <!-- SUCCÈS -->
+    <section class="screen" id="s-done">
+      <div class="done3d"><div class="dcard"><div class="face"><img src="carte-jeanlou.jpg" alt=""></div><span class="vb"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div></div>
+      <div class="center stagger">
+        <h2>Votre carte est active</h2>
+        <p id="done-sub">Votre carte est reliée à votre page de contact. Faisons un test pour en être sûr.</p>
+      </div>
+      <ol class="steps" style="margin-top:20px">
+        <li><span>Posez la carte contre le <b>haut du téléphone</b>.</span></li>
+        <li><span>Une notification ou une page s'ouvre. <em>Touchez-la</em> si besoin.</span></li>
+        <li><span>Votre page de contact s'affiche. C'est gagné.</span></li>
+      </ol>
+      <p class="small center" style="margin-top:2px">Désormais, un simple geste suffit : vos contacts approchent leur téléphone et votre page s'ouvre, sans application.</p>
+      <a class="call" href="tel:+33764021268">
+        <span class="ci"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>
+        <span class="ct"><b>Un souci ?</b><small>Appelez-moi, je vous réponds directement.</small></span>
+        <span class="num">07 64 02 12 68</span>
+      </a>
+      <div class="sp"></div>
+      <div class="stack">
+        <a class="btn ghost" id="open-card" href="#" target="_blank" rel="noopener">Voir ma page de contact</a>
+        <button class="link" id="again" type="button">Recommencer l'activation</button>
+        <button class="link" id="chg2" type="button" style="margin-top:-8px">Changer mon lien</button>
+      </div>
+    </section>
+
+    <!-- ERREUR -->
+    <section class="screen" id="s-err">
+      <div class="check warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg></div>
+      <div class="center">
+        <h2 id="err-t">Oups</h2>
+        <p id="err-m"></p>
+      </div>
+      <div class="sp vis" aria-hidden="true"><div class="v"><div class="c3 big dim"><span class="bd">!</span></div></div></div>
+      <div class="stack">
+        <button class="btn" id="retry" type="button">Réessayer</button>
+        <button class="link" id="to-ios3" type="button">Utiliser l'application NFC Tools à la place</button>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="foot">RG.card &middot; Cartes NFC connectées<br>Un souci ? Répondez simplement au dernier mail reçu.</div>
+</div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(ua);
+  var hasNFC = ('NDEFReader' in window);
+
+  /* ---- lien de la carte de visite (RG.link). Réutilisable via ?l=https://... ---- */
+  var DEFAULT_LINK = 'https://rgbusinesscard.github.io/RG.link/';
+  function parseLink(v){
+    v = (v || '').trim();
+    if(!v) return null;
+    if(!/^[a-z]+:\/\//i.test(v)) v = 'https://' + v;
+    try{
+      var u = new URL(v);
+      if(u.protocol !== 'https:' || u.hostname.indexOf('.') < 0) return null;
+      return u;
+    }catch(e){ return null; }
+  }
+  function shortLink(u){ return u.host + (u.pathname !== '/' ? u.pathname.replace(/\/$/, '') : ''); }
+  var link = parseLink(DEFAULT_LINK);
+  try{
+    var q = new URLSearchParams(location.search);
+    var over = parseLink(q.get('l') || q.get('lien'));
+    if(over) link = over;
+  }catch(e){}
+  (function(){
+    var els = document.querySelectorAll('.lk');
+    for(var i=0;i<els.length;i++) els[i].textContent = shortLink(link);
+    $('open-card').href = link.href;
+  })();
+
+
+  /* ---- astuces pendant le scan ---- */
+  var TIPS = ['Cherchez la zone NFC, souvent au centre du dos du téléphone.','Ne bougez plus, cela ne prend que quelques secondes.','Une coque épaisse gêne parfois la lecture, retirez-la si besoin.','Toujours rien ? Décalez doucement la carte vers le haut ou le bas.'];
+  var tipT = null, tmrT = null, tipI = 0;
+  function tips(on){
+    clearInterval(tipT); clearInterval(tmrT); var el = $('tip'); if(!el) return;
+    if(!on && $('tmr')) $('tmr').textContent = '';
+    if(!on){ el.textContent = ''; return; }
+    tipI = 0; el.textContent = TIPS[0];
+    var t0 = Date.now(), tm = $('tmr'); clearInterval(tmrT);
+    tmrT = setInterval(function(){ var n = Math.floor((Date.now()-t0)/1000); tm.textContent = 'Recherche en cours \u00b7 ' + Math.floor(n/60) + ':' + (n%60<10?'0':'') + (n%60); }, 1000);
+    tm.textContent = 'Recherche en cours \u00b7 0:00';
+    tipT = setInterval(function(){
+      el.classList.add('out');
+      setTimeout(function(){ tipI = (tipI + 1) % TIPS.length; el.textContent = TIPS[tipI]; el.classList.remove('out'); }, 350);
+    }, 4200);
+  }
+
+
+  /* ---- changer mon lien ---- */
+  function setLink(u){
+    link = u;
+    var els = document.querySelectorAll('.lk');
+    for(var i=0;i<els.length;i++) els[i].textContent = shortLink(link);
+    $('open-card').href = link.href;
+  }
+  function goAndroid(){ show(hasNFC ? 's-and' : 's-unsup'); }
+  function goIOS(){ iosGo(0); show('s-ios'); }
+  var newU = null;
+  function checkNew(){
+    var v = $('newurl').value.trim();
+    newU = v ? parseLink(v) : null;
+    $('field').classList.toggle('ok', !!newU);
+    $('field').classList.remove('bad');
+    $('c-ios2').disabled = $('c-and2').disabled = !newU;
+    $('flow-t').textContent = newU ? shortLink(newU) : (v || 'votre-lien.fr');
+    $('urlerr').textContent = (v && !newU) ? 'Entrez une adresse complète, par exemple monsite.fr/carte' : (newU ? 'Parfait, ce lien sera enregistré : ' + shortLink(newU) : '');
+  }
+  $('newurl').addEventListener('input', checkNew);
+  var initLink = link;
+  $('act').addEventListener('click', function(){ buzz(20); setLink(initLink); show('s-device'); });
+  $('chg').addEventListener('click', function(){ buzz(20); show('s-change'); });
+  $('chg2').addEventListener('click', function(){ buzz(20); history_ = ['s-home']; show('s-change'); });
+  $('c-ios2').addEventListener('click', function(){ if(!newU) return; setLink(newU); goIOS(); });
+  $('c-and2').addEventListener('click', function(){ if(!newU) return; setLink(newU); goAndroid(); });
+
+  /* ---- carte 3D qui suit le doigt ou l'inclinaison ---- */
+  var tiltEl = $('tilt');
+  function setTilt(x, y){ tiltEl.style.setProperty('--rx', (-y*16) + 'deg'); tiltEl.style.setProperty('--ry', (x*22) + 'deg'); }
+  window.addEventListener('pointermove', function(e){ if($('s-home').classList.contains('on')) setTilt(e.clientX/innerWidth - .5, e.clientY/innerHeight - .5); }, {passive:true});
+  window.addEventListener('deviceorientation', function(e){
+    if(e.gamma == null || !$('s-home').classList.contains('on')) return;
+    setTilt(Math.max(-1,Math.min(1,e.gamma/35))/2, Math.max(-1,Math.min(1,(e.beta-45)/35))/2);
+  }, {passive:true});
+  tiltEl.addEventListener('click', function(){
+    tiltEl.classList.remove('spin'); void tiltEl.offsetWidth; tiltEl.classList.add('spin'); buzz(25);
+  });
+
+  /* ---- effet d'onde sur les boutons ---- */
+  document.addEventListener('pointerdown', function(e){
+    var b = e.target.closest && e.target.closest('.btn'); if(!b) return;
+    var r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2, s = document.createElement('span');
+    s.className = 'rp'; s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - r.left - d/2) + 'px'; s.style.top = (e.clientY - r.top - d/2) + 'px';
+    b.appendChild(s); setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 700);
+  }, {passive:true});
+
+
+  /* ---- les scènes s'adaptent à la place disponible ---- */
+  function fit(){
+    var els = document.querySelectorAll('.sp.vis');
+    for(var i=0;i<els.length;i++){
+      var e = els[i], v = e.firstElementChild;
+      if(!e.offsetParent) continue;
+      var k = Math.min(1, (e.clientHeight - 24) / 170, e.clientWidth / 270);
+      v.style.transform = 'scale(' + Math.max(k, 0.01) + ')';
+      v.style.visibility = k < 0.5 ? 'hidden' : 'visible';
+    }
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('load', function(){ fit(); setTimeout(fit, 400); });
+
+  /* ---- navigation entre écrans ---- */
+  var history_ = ['s-home'];
+  function show(id, noPush){
+    var all = document.querySelectorAll('.screen');
+    for(var i=0;i<all.length;i++) all[i].classList.remove('on');
+    $(id).classList.add('on');
+    if(!noPush){
+      if((id === 's-err' || id === 's-done') && history_[history_.length-1] === 's-scan') history_.pop();
+      if(history_[history_.length-1] !== id) history_.push(id);
+    }
+    $('back').classList.toggle('show', id !== 's-home' && id !== 's-scan');
+    tips(id === 's-scan');
+    fit(); setTimeout(fit, 60); setTimeout(fit, 500);
+    window.scrollTo(0,0);
+  }
+  function goBack(){
+    if(history_.length > 1){ history_.pop(); show(history_[history_.length-1], true); }
+  }
+  $('back').addEventListener('click', function(){
+    if($('s-ios').classList.contains('on') && iosIdx > 0){ iosGo(iosIdx-1); return; }
+    goBack();
+  });
+
+  /* ---- choix appareil ---- */
+  if(isIOS) $('c-ios').classList.add('det');
+  if(isAndroid) $('c-and').classList.add('det');
+  function badge(el){ var b = document.createElement('div'); b.className = 'badge'; b.textContent = 'Votre appareil'; el.appendChild(b); }
+  if(isIOS) badge($('c-ios')); else if(isAndroid) badge($('c-and'));
+
+  $('c-and').addEventListener('click', goAndroid);
+  $('c-ios').addEventListener('click', goIOS);
+  ['to-ios','to-ios2','to-ios3'].forEach(function(id){ $(id).addEventListener('click', function(){ iosGo(0); show('s-ios'); }); });
+
+  /* ---- Android : Web NFC ---- */
+  var ctrl = null;
+  function buzz(pat){ try{ if(navigator.vibrate) navigator.vibrate(pat); }catch(e){} }
+  function fail(title, msg){ $('err-t').textContent = title; $('err-m').textContent = msg; show('s-err'); buzz([60,40,60]); }
+
+  function writeCard(){
+    var reader;
+    try{ reader = new NDEFReader(); }catch(e){ show('s-unsup'); return; }
+    ctrl = new AbortController();
+    show('s-scan');
+    reader.write({ records: [{ recordType: 'url', data: link.href }] }, { signal: ctrl.signal })
+      .then(function(){
+        ctrl = null;
+        $('done-sub').textContent = 'Le lien est enregistré sur la carte. Faisons un test pour en être sûr.';
+        show('s-done'); buzz([80,50,160]); confetti();
+      })
+      .catch(function(err){
+        var n = err && err.name;
+        ctrl = null;
+        if(n === 'AbortError'){ history_.pop(); if(history_[history_.length-1] === 's-err') history_.pop(); show(history_[history_.length-1], true); return; }
+        if(n === 'NotAllowedError') return fail('Autorisation refusée', 'Autorisez le NFC pour ce site quand le téléphone le demande, puis réessayez.');
+        if(n === 'NotSupportedError') return fail('NFC indisponible', 'Activez le NFC dans les réglages du téléphone. Si le problème continue, utilisez la méthode avec NFC Tools.');
+        if(n === 'NotReadableError') return fail('Carte non lue', 'Repositionnez la carte au dos du téléphone, plus près du haut, puis réessayez.');
+        if(n === 'NetworkError') return fail('Écriture interrompue', 'La carte a bougé ou ne peut pas être modifiée. Collez-la bien contre le téléphone et réessayez.');
+        fail('Un petit souci', 'L\'activation n\'a pas abouti. Réessayez en collant bien la carte au dos du téléphone.');
+      });
+  }
+  $('go-and').addEventListener('click', writeCard);
+  $('retry').addEventListener('click', function(){ if(hasNFC) writeCard(); else { iosGo(0); show('s-ios'); } });
+  $('cancel').addEventListener('click', function(){ if(ctrl) ctrl.abort(); else goBack(); });
+  $('copy-page').addEventListener('click', function(){ copy(location.href, $('copy-page'), 'Copier l\'adresse de la page'); });
+
+  /* ---- iPhone : parcours guidé ---- */
+  var iosIdx = 0;
+  function iosGo(i){
+    iosIdx = i;
+    var steps = document.querySelectorAll('.ios-step');
+    for(var k=0;k<steps.length;k++) steps[k].classList.toggle('on', k === i);
+    var bars = $('prog').children;
+    for(var j=0;j<bars.length;j++) bars[j].classList.toggle('d', j <= i);
+    setTimeout(fit, 30); setTimeout(fit, 500);
+    window.scrollTo(0,0);
+  }
+  var nx = document.querySelectorAll('[data-next]');
+  for(var n=0;n<nx.length;n++) nx[n].addEventListener('click', function(){ iosGo(Math.min(iosIdx+1, 3)); });
+  $('ios-done').addEventListener('click', function(){
+    $('done-sub').textContent = 'Votre carte est reliée à votre page de contact. Faisons un test pour en être sûr.';
+    show('s-done'); buzz(40); confetti();
+  });
+  $('again').addEventListener('click', function(){ history_ = ['s-home']; show('s-home', true); });
+
+  /* ---- copie ---- */
+  function copy(text, btn, label, done){
+    function ok(){ var o = btn.textContent; btn.textContent = 'Copié ✓'; buzz(30); setTimeout(function(){ btn.textContent = label || o; }, 1800); if(done) setTimeout(done, 750); }
+    function fb(){
+      var t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly','');
+      t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); t.setSelectionRange(0, 9999);
+      try{ document.execCommand('copy'); ok(); }catch(e){ btn.textContent = 'Copie impossible'; }
+      document.body.removeChild(t);
+    }
+    if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(ok, fb); } else fb();
+  }
+  $('copy1').addEventListener('click', function(){ copy(link.href, $('copy1'), 'Copier le lien', function(){ if($('i1').classList.contains('on')) iosGo(1); }); });
+  $('copy3').addEventListener('click', function(){ copy(link.href, $('copy3'), 'Copier le lien'); });
+  $('copy3b').addEventListener('click', function(){ copy(link.href.replace(/^https:\/\//, ''), $('copy3b'), 'Copier sans https://'); });
+
+  /* ---- confettis (tons de la carte) ---- */
+  function confetti(){
+    if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var box = $('confetti'), cols = ['#17181A','#5A5D60','#9A9D9F','#26282A','#C9C7C0'];
+    box.innerHTML = '';
+    for(var i=0;i<46;i++){
+      var s = document.createElement('span');
+      s.style.left = (Math.random()*100) + '%';
+      s.style.background = cols[i % cols.length];
+      s.style.setProperty('--x', (Math.random()*160-80) + 'px');
+      s.style.setProperty('--r', (Math.random()*900-450) + 'deg');
+      s.style.animationDelay = (Math.random()*0.5) + 's';
+      box.appendChild(s);
+    }
+    setTimeout(function(){ box.innerHTML = ''; }, 3400);
+  }
+})();
+</script>
+</body>
+</html>
