@@ -341,14 +341,21 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
 .call .ct small{display:block;color:var(--graphite);font-size:.78rem;margin-top:1px;}
 .call .num{flex-shrink:0;font-weight:700;font-size:.82rem;letter-spacing:.01em;white-space:nowrap;}
 @media (max-width:359px){.call{flex-wrap:wrap;}.call .num{width:100%;padding-left:48px;}}
-.shot{margin:2px auto 16px;width:min(62vw,236px);position:relative;border-radius:18px;background:#101010;box-shadow:0 22px 34px -16px rgba(23,24,26,.6),0 0 0 1px rgba(23,24,26,.25);}
-.shot img{display:block;width:100%;height:auto;border-radius:18px;}
-.shot .hl{position:absolute;left:2.4%;width:95.2%;top:55.6%;height:14.2%;border-radius:10px;border:2.5px solid #fff;animation:hlp 1.8s ease-out infinite;}
-@keyframes hlp{0%{box-shadow:0 0 0 0 rgba(255,255,255,.65);}100%{box-shadow:0 0 0 14px rgba(255,255,255,0);}}
-.shot .fg{position:absolute;right:12%;top:63%;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 6px rgba(255,255,255,.3);animation:tapf 1.8s ease-in-out infinite;}
-@keyframes tapf{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(.7);opacity:1;}}
-.shot figcaption{position:absolute;left:0;right:0;bottom:-11px;margin:auto;width:max-content;background:var(--ink);color:var(--paper);font:700 .68rem var(--sans);letter-spacing:.04em;padding:5px 12px;border-radius:99px;}
-@media (max-height:720px){.shot{width:min(52vw,190px);}}
+
+.tap4{position:relative;width:240px;height:236px;margin:0 auto 14px;}
+.tap4 .pf{position:absolute;left:50%;top:30px;width:158px;height:194px;margin-left:-79px;border:3px solid var(--ink);border-radius:26px;overflow:hidden;background:#101010;box-shadow:0 22px 34px -16px rgba(23,24,26,.6);}
+.tap4 .inn{position:relative;width:100%;}
+.tap4 .inn img{display:block;width:100%;height:auto;}
+.tap4 .hl{position:absolute;left:2.6%;width:94.8%;top:24.5%;height:6.3%;border-radius:6px;border:2px solid #fff;animation:hlp 1.8s ease-out infinite;}
+@keyframes hlp{0%{box-shadow:0 0 0 0 rgba(255,255,255,.7);}100%{box-shadow:0 0 0 9px rgba(255,255,255,0);}}
+.tap4 .fg{position:absolute;right:12%;top:27%;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 0 0 4px rgba(255,255,255,.3);animation:tapf 1.8s ease-in-out infinite;}
+@keyframes tapf{0%,100%{transform:scale(1);}50%{transform:scale(.7);}}
+.tap4 .cd{position:absolute;left:50%;top:-10px;width:96px;height:60px;margin-left:-48px;border-radius:10px;z-index:3;background:linear-gradient(145deg,#2b2c2f,#151618);box-shadow:0 16px 26px -12px rgba(23,24,26,.7),0 0 0 1px rgba(255,255,255,.08);animation:tap4 4.2s ease-in-out infinite;}
+.tap4 .cd::after{content:"";position:absolute;inset:16% 22%;background:var(--logo) center/contain no-repeat;opacity:.92;}
+@keyframes tap4{0%{transform:translate(90px,110px) rotate(20deg);opacity:0;}16%{opacity:1;}42%,76%{transform:translate(0,0) rotate(0);opacity:1;}94%,100%{transform:translate(0,0) rotate(0);opacity:0;}}
+.tap4 .rg{position:absolute;left:50%;top:34px;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid var(--ink);opacity:0;z-index:2;animation:rg4 4.2s ease-out infinite;}
+@keyframes rg4{0%,40%{transform:scale(.3);opacity:0;}48%{opacity:.7;}78%,100%{transform:scale(3.4);opacity:0;}}
+@media (max-height:720px){.tap4{transform:scale(.82);transform-origin:top center;margin-bottom:-34px;}}
 </style>
 </head>
 <body>
@@ -523,7 +530,8 @@ h1 em .w{background:linear-gradient(100deg,#26282A 38%,#9A9D9F 50%,#26282A 62%) 
       <div class="ios-step" id="i4">
         <div class="kicker">Étape 4 sur 4</div>
         <h2>Écrivez sur la carte</h2>
-        <figure class="shot"><img src="nfctools-ecrire.jpg" alt="Écran Ecrire de l'application NFC Tools"><span class="hl"></span><span class="fg"></span><figcaption>Vous devez voir cet écran</figcaption></figure>
+        <div class="tap4" aria-hidden="true"><div class="pf"><div class="inn"><img src="nfctools-ecrire.jpg" alt=""><span class="hl"></span><span class="fg"></span></div></div><i class="rg"></i><div class="cd"></div></div>
+        <p class="small center" style="margin:-2px 0 14px">Votre écran doit ressembler à ça</p>
         <ol class="steps">
           <li><span>Touchez <em>Ecrire / <span id="bytes">38</span> Bytes</em> dans l'application.</span></li>
           <li><span>Posez la carte contre le <b>haut de l'iPhone</b>.</span></li>
